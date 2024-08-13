@@ -13,12 +13,12 @@ def main():
     questions = 93
     choices = 5
     pdf: bool = False  # Se True, processa PDFs; se False, processa imagens
-    gabaritos_path = "gabaritos"
+    answer_sheet_path = "Answers Sheets"
     pdf_path = "pdf"
     temp_img_dir = "temp_images"
 
     # Criar diretório para armazenar imagens e resultados
-    utils.create_directory("Resultados")
+    utils.create_directory("Results")
     utils.create_directory(temp_img_dir)
 
     # Processar arquivos PDF ou imagens, dependendo da configuração
@@ -26,13 +26,13 @@ def main():
         if pdf:
             files = utils.process_pdf_files(pdf_path, temp_img_dir)
         else:
-            files = utils.process_image_files(gabaritos_path)
+            files = utils.process_image_files(answer_sheet_path)
     except Exception as e:
         print(f"Erro ao processar arquivos: {e}")
         return
 
     for file_name in files:
-        file_path = os.path.join(temp_img_dir if pdf else gabaritos_path, file_name)
+        file_path = os.path.join(temp_img_dir if pdf else answer_sheet_path , file_name)
 
         try:
             # Ler imagem
@@ -43,7 +43,7 @@ def main():
 
             # Obter ID da página do nome do arquivo
             page_id = utils.extract_id_from_image(image)
-            output_dir = os.path.join("Resultados", page_id)
+            output_dir = os.path.join("Results", page_id)
             utils.create_directory(output_dir)
 
             # Processar imagem
@@ -53,10 +53,10 @@ def main():
 
             # Extrair e analisar respostas
             boxes = utils.split_boxes(adaptive_img)
-            myPixelVal = utils.analyze_responses(boxes, questions, choices)
+            pixel_val = utils.analyze_responses(boxes, questions, choices)
 
             # Determinar as respostas
-            final = utils.determine_answers(myPixelVal, questions)
+            final = utils.determine_answers(pixel_val, questions)
 
             # Salvar resultados em um JSON
             json_filename = os.path.splitext(file_name)[0] + ".json"

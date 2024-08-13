@@ -10,6 +10,7 @@ def resize_image(image: np.ndarray, width_img: int, height_img: int) -> np.ndarr
     :param width_img: Largura desejada da imagem (int).
     :param height_img: Altura desejada da imagem (int).
     :return: Imagem redimensionada (np.ndarray).
+    :raises TypeError: Se a imagem não for um numpy ndarray.
     """
     if not isinstance(image, np.ndarray):
         raise TypeError("A imagem deve ser um numpy ndarray.")
@@ -21,6 +22,7 @@ def preprocess_image(image: np.ndarray) -> np.ndarray:
 
     :param image: Imagem a ser convertida (np.ndarray).
     :return: Imagem em escala de cinza (np.ndarray).
+    :raises TypeError: Se a imagem não for um numpy ndarray.
     """
     if not isinstance(image, np.ndarray):
         raise TypeError("A imagem deve ser um numpy ndarray.")
@@ -32,6 +34,7 @@ def threshold_img(image: np.ndarray) -> np.ndarray:
 
     :param image: Imagem em escala de cinza (np.ndarray).
     :return: Imagem binarizada (np.ndarray).
+    :raises TypeError: Se a imagem não for um numpy ndarray.
     """
     if not isinstance(image, np.ndarray):
         raise TypeError("A imagem deve ser um numpy ndarray.")
@@ -40,17 +43,18 @@ def threshold_img(image: np.ndarray) -> np.ndarray:
 
 def remove_noise(image: np.ndarray) -> np.ndarray:
     """
-    Remove o ruído da imagem usando filtro de difusão não local.
+    Remove o ruído da imagem usando um filtro de difusão não local.
 
     :param image: Imagem a ser processada (np.ndarray).
     :return: Imagem sem ruído (np.ndarray).
+    :raises TypeError: Se a imagem não for um numpy ndarray.
     """
     if not isinstance(image, np.ndarray):
         raise TypeError("A imagem deve ser um numpy ndarray.")
     return cv2.fastNlMeansDenoising(image, None, 30, 7, 21)
 
-def split_boxes(image: np.ndarray, top_removal_height=40, bottom_removal_height=10,
-                start_slice=20, end_slice=170, shift_x=50, shift_y=0) -> list:
+def split_boxes(image: np.ndarray, top_removal_height: int = 40, bottom_removal_height: int = 10,
+                start_slice: int = 20, end_slice: int = 170, shift_x: int = 50, shift_y: int = 0) -> list:
     """
     Divide a imagem em caixas, removendo partes desnecessárias e dividindo em colunas e linhas.
 
@@ -62,6 +66,7 @@ def split_boxes(image: np.ndarray, top_removal_height=40, bottom_removal_height=
     :param shift_x: Deslocamento horizontal para remoção de laterais (int).
     :param shift_y: Deslocamento vertical para remoção de laterais (int).
     :return: Lista de caixas extraídas (list).
+    :raises TypeError: Se a imagem não for um numpy ndarray.
     """
     if not isinstance(image, np.ndarray):
         raise TypeError("A imagem deve ser um numpy ndarray.")
@@ -81,36 +86,35 @@ def split_boxes(image: np.ndarray, top_removal_height=40, bottom_removal_height=
             row_height, row_width = row.shape[:2]
 
             # Garantir que os índices de fatia estejam no intervalo válido
-            start_slice = max(0, start_slice)
-            end_slice = min(row_width, end_slice)
+            start_slice_valid = max(0, start_slice)
+            end_slice_valid = min(row_width, end_slice)
 
             # Remover laterais da linha
-            row = row[shift_y:row_height - shift_y, start_slice + shift_x:end_slice + shift_x]
+            row = row[shift_y:row_height - shift_y, start_slice_valid + shift_x:end_slice_valid + shift_x]
 
             # Dividir caixas na coluna
             cols = np.hsplit(row, 5)
-            for t, box in enumerate(cols):
-                boxes.append(box)
-                # Salvar as caixas apenas se for necessário para depuração
-                # cv2.imwrite(f"images/box_{i}_{j}_{t}.png", box)
+            boxes.extend(cols)
 
     return boxes
 
 def process_image(image: np.ndarray, width_img: int, height_img: int) -> np.ndarray:
     """
-    Pipeline de processamento da imagem, convertendo para escala de cinza, aplicando threshold adaptativo e remoção de ruído.
+    Pipeline de processamento da imagem: redimensiona, converte para escala de cinza,
+    aplica threshold adaptativo e remove ruído.
 
     :param image: Imagem a ser processada (np.ndarray).
     :param width_img: Largura desejada da imagem (int).
     :param height_img: Altura desejada da imagem (int).
     :return: Imagem processada (np.ndarray).
+    :raises TypeError: Se a imagem não for um numpy ndarray.
     """
     if not isinstance(image, np.ndarray):
         raise TypeError("A imagem deve ser um numpy ndarray.")
 
     resized_img = resize_image(image, width_img, height_img)
-    processed_img = preprocess_image(resized_img)
-    adaptive_img = threshold_img(processed_img)
-    denoised_img = remove_noise(adaptive_img)
+    gray_img = preprocess_image(resized_img)
+    thresh_img = threshold_img(gray_img)
+    denoised_img = remove_noise(thresh_img)
 
     return denoised_img
